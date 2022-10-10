@@ -1,6 +1,7 @@
 use bitcoin::hashes::hex::FromHex;
 use bitcoin::{Script, XOnlyPublicKey};
 use miniscript::{Miniscript, MiniscriptKey, Tap};
+use simplicity::core::Context;
 use simplicity::jet::application::Bitcoin;
 use simplicity::policy::ast::Policy;
 use simplicity::policy::key::PublicKey32;
@@ -45,7 +46,8 @@ pub fn parse_miniscript(hex_string: &str) -> Policy<XOnlyPublicKey> {
 
 /// Compile the given Simplicity policy into an equivalent program commitment.
 pub fn compile<Pk: MiniscriptKey + PublicKey32>(policy: &Policy<Pk>) -> Rc<CommitNode<Bitcoin>> {
-    match policy.compile() {
+    let mut context = Context::default();
+    match policy.compile(&mut context) {
         Ok(x) => x,
         Err(e) => {
             eprintln!(
