@@ -60,17 +60,20 @@ fn compute_connected_component<'a, App: Application>(
 
 /// Print the given scribe expression in a Graphviz-parsable format.
 fn print_scribe(value: &Value, index: usize) {
-    if let Ok(bytes) = value.try_to_bytes() {
-        print!("{} [label=\"scribe\\n0x", index);
+    let (bytes, bit_len) = value.to_bytes_len();
+    print!("{} [label=\"scribe\\n", index);
 
+    if bit_len % 8 == 0 {
         for byte in &bytes {
             print!("{:02X}", byte);
         }
-
-        println!("\\n1 → 2^{}\"]", bytes.len() * 8);
     } else {
-        unimplemented!("Can only display scribe values that are bytes")
+        for byte in &bytes {
+            print!("{:08b}", byte)
+        }
     }
+
+    println!("\\n1 → 2^{}\"]", bit_len);
 }
 
 /// Print the given node in a Graphviz-parsable format.
