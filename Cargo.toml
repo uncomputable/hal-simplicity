@@ -6,8 +6,6 @@ edition = "2021"
 authors = ["Christian Lewe"]
 license = "CC0-1.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 simplicity = { git = "https://github.com/ElementsProject/rust-simplicity", branch = "master" }
 base64 = "0.21"
