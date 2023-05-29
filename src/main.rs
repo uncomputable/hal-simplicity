@@ -1,9 +1,11 @@
 mod compress;
 mod decode;
 mod encode;
+mod error;
 mod graphviz;
 mod policy;
 
+use crate::error::Error;
 use clap::{Parser, Subcommand};
 use simplicity::jet::Elements;
 
@@ -45,7 +47,7 @@ enum Command {
     },
 }
 
-fn main() {
+fn main() -> Result<(), Error> {
     let cli = Cli::parse();
 
     match cli.command {
@@ -56,7 +58,8 @@ fn main() {
         Command::Graph { base64 } => {
             let program = decode::decode_program_dummy_witness::<Elements>(&base64);
             let node_to_scribe = compress::compress_scribe(&program);
-            graphviz::print_program(&program, &node_to_scribe);
+            let dot = graphviz::program_to_dot(&program, &node_to_scribe)?;
+            println!("{}", dot);
         }
         Command::Script { hex } => {
             let policy = policy::parse_miniscript(&hex);
@@ -67,4 +70,6 @@ fn main() {
             );
         }
     }
+
+    Ok(())
 }

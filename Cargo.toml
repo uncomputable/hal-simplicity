@@ -10,3 +10,4 @@ license = "CC0-1.0"
 simplicity = { git = "https://github.com/ElementsProject/rust-simplicity", branch = "master" }
 base64 = "0.21"
 clap = { version = "4.3", features = ["derive"] }
+thiserror = "1.0"
