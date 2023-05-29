@@ -5,7 +5,7 @@ mod graphviz;
 mod policy;
 
 use clap::{App, Arg, Command};
-use simplicity::jet::application::Bitcoin;
+use simplicity::jet::Elements;
 
 fn main() {
     let list_subcommand = Command::new("list")
@@ -16,7 +16,9 @@ fn main() {
         .about("Visualize a Simplicity program as a graph")
         .arg_required_else_help(true)
         .arg(Arg::new("base64_string").help("base64 encoding of Simplicity program"))
-        .after_help("Compile to PNG via `simple-companion [base64_string] | dot -Tpng -o file.png`");
+        .after_help(
+            "Compile to PNG via `simple-companion [base64_string] | dot -Tpng -o file.png`",
+        );
     let script_subcommand = Command::new("script")
         .about("Parse the given hex as Miniscript, convert into equivalent Simplicity and export the resulting program")
         .arg_required_else_help(true)
@@ -48,7 +50,7 @@ fn main() {
                 .get_one::<String>("base64_string")
                 .expect("positional");
 
-            let program = decode::decode_program_dummy_witness::<Bitcoin>(base64_string);
+            let program = decode::decode_program_dummy_witness::<Elements>(base64_string);
             println!("{}", program);
         }
         ("graph", arg_matches) => {
@@ -56,7 +58,7 @@ fn main() {
                 .get_one::<String>("base64_string")
                 .expect("positional");
 
-            let program = decode::decode_program_dummy_witness::<Bitcoin>(base64_string);
+            let program = decode::decode_program_dummy_witness::<Elements>(base64_string);
             let node_to_scribe = compress::compress_scribe(&program);
             graphviz::print_program(&program, &node_to_scribe);
         }

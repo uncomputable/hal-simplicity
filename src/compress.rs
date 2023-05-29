@@ -1,17 +1,15 @@
 use simplicity::core::iter::DagIterable;
-use simplicity::core::redeem::{RedeemNodeInner, RefWrapper};
-use simplicity::core::{RedeemNode, Value};
-use simplicity::jet::Application;
+use simplicity::core::redeem::RedeemNodeInner;
+use simplicity::core::{redeem, RedeemNode, Value};
+use simplicity::jet::Jet;
 use std::collections::HashMap;
 
 /// Compute a mapping of nodes to the scribe expression that they represent.
 /// This effectively reverses the function that turns scribe expressions into DAGs.
-pub fn compress_scribe<App: Application>(
-    program: &RedeemNode<App>,
-) -> HashMap<RefWrapper<App>, Value> {
+pub fn compress_scribe<J: Jet>(program: &RedeemNode<J>) -> HashMap<redeem::RefWrapper<J>, Value> {
     let mut node_to_scribe = HashMap::new();
 
-    for node in RefWrapper(program).iter_post_order() {
+    for node in redeem::RefWrapper(program).iter_post_order() {
         match &node.0.inner {
             RedeemNodeInner::Unit => {
                 node_to_scribe.insert(node, Value::Unit);

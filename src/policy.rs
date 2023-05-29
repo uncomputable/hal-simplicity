@@ -1,17 +1,16 @@
-use bitcoin::hashes::hex::FromHex;
-use bitcoin::{Script, XOnlyPublicKey};
-use miniscript::{Miniscript, MiniscriptKey, Tap};
+use simplicity::bitcoin_hashes::hex::FromHex;
 use simplicity::core::Context;
-use simplicity::jet::application::Bitcoin;
+use simplicity::jet::Elements;
+use simplicity::miniscript::{Miniscript, MiniscriptKey, Tap};
 use simplicity::policy::ast::Policy;
 use simplicity::policy::key::PublicKey32;
-use simplicity::CommitNode;
+use simplicity::{bitcoin, elements, CommitNode};
 use std::process;
 use std::rc::Rc;
 
 /// Parse the given hex string as Miniscript (Tapscript)
 /// and convert into an equivalent Simplicity policy.
-pub fn parse_miniscript(hex_string: &str) -> Policy<XOnlyPublicKey> {
+pub fn parse_miniscript(hex_string: &str) -> Policy<bitcoin::XOnlyPublicKey> {
     let u8_vector = match Vec::<u8>::from_hex(hex_string) {
         Ok(x) => x,
         Err(e) => {
@@ -23,7 +22,7 @@ pub fn parse_miniscript(hex_string: &str) -> Policy<XOnlyPublicKey> {
         }
     };
 
-    let script = Script::from(u8_vector);
+    let script = elements::Script::from(u8_vector);
     println!("Bitcoin Script:\n{}\n", script);
 
     let miniscript = match Miniscript::<_, Tap>::parse(&script) {
@@ -45,7 +44,7 @@ pub fn parse_miniscript(hex_string: &str) -> Policy<XOnlyPublicKey> {
 }
 
 /// Compile the given Simplicity policy into an equivalent program commitment.
-pub fn compile<Pk: MiniscriptKey + PublicKey32>(policy: &Policy<Pk>) -> Rc<CommitNode<Bitcoin>> {
+pub fn compile<Pk: MiniscriptKey + PublicKey32>(policy: &Policy<Pk>) -> Rc<CommitNode<Elements>> {
     let mut context = Context::default();
     match policy.compile(&mut context) {
         Ok(x) => x,

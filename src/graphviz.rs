@@ -1,20 +1,19 @@
 use simplicity::core::iter::DagIterable;
-use simplicity::core::redeem::RefWrapper;
-use simplicity::core::{RedeemNode, Value};
-use simplicity::jet::Application;
+use simplicity::core::{redeem, RedeemNode, Value};
+use simplicity::jet::Jet;
 use std::collections::{HashMap, HashSet};
 
 /// Print the given program in a Graphviz-parseable format.
-pub fn print_program<App: Application>(
-    program: &RedeemNode<App>,
-    node_to_scribe: &HashMap<RefWrapper<App>, Value>,
+pub fn print_program<J: Jet>(
+    program: &RedeemNode<J>,
+    node_to_scribe: &HashMap<redeem::RefWrapper<J>, Value>,
 ) {
     println!("digraph {{\nranksep=3;");
 
-    let connected = compute_connected_component(RefWrapper(program), node_to_scribe);
+    let connected = compute_connected_component(redeem::RefWrapper(program), node_to_scribe);
     let mut node_to_index = HashMap::new();
 
-    for (index, node) in RefWrapper(program).iter_post_order().enumerate() {
+    for (index, node) in redeem::RefWrapper(program).iter_post_order().enumerate() {
         if !connected.contains(&node) {
             continue;
         }
@@ -33,10 +32,10 @@ pub fn print_program<App: Application>(
 
 /// Compute the connected component of the given program by traversing from the root in pre-order.
 /// Scribe expressions are treated as leaves.
-fn compute_connected_component<'a, App: Application>(
-    program: RefWrapper<'a, App>,
-    node_to_scribe: &HashMap<RefWrapper<App>, Value>,
-) -> HashSet<RefWrapper<'a, App>> {
+fn compute_connected_component<'a, J: Jet>(
+    program: redeem::RefWrapper<'a, J>,
+    node_to_scribe: &HashMap<redeem::RefWrapper<J>, Value>,
+) -> HashSet<redeem::RefWrapper<'a, J>> {
     let mut visited = HashSet::new();
     let mut stack = vec![program];
 
@@ -77,10 +76,10 @@ fn print_scribe(value: &Value, index: usize) {
 }
 
 /// Print the given node in a Graphviz-parsable format.
-fn print_node<App: Application>(
-    node: RefWrapper<App>,
+fn print_node<J: Jet>(
+    node: redeem::RefWrapper<J>,
     index: usize,
-    node_to_index: &HashMap<RefWrapper<App>, usize>,
+    node_to_index: &HashMap<redeem::RefWrapper<J>, usize>,
 ) {
     print!("{} [label=\"{}\\n{}\"];", index, node.0.inner, node.0.ty);
 
