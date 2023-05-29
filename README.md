@@ -1,4 +1,4 @@
-# Simple Companion
+# hal-simplicity -- the Simplicity companion
 
 CLI companion for the Simplicity language,
 in spirit of [hal](https://github.com/stevenroose/hal).

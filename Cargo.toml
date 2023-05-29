@@ -1,5 +1,5 @@
 [package]
-name = "simple-companion"
+name = "hal-simplicity"
 description = "Companion for the Simplicity language"
 version = "0.1.0"
 edition = "2021"
