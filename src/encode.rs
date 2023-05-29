@@ -1,3 +1,5 @@
+use base64::engine::general_purpose;
+use base64::Engine;
 use simplicity::bitwriter::BitWriter;
 use simplicity::jet::Jet;
 use simplicity::{CommitNode, RedeemNode};
@@ -19,7 +21,7 @@ where
         }
     }
 
-    base64::encode(&program_bytes)
+    general_purpose::STANDARD.encode(&program_bytes)
 }
 
 /// Encode the given program commitment as base64 string.
