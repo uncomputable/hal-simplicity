@@ -22,4 +22,5 @@ Cargo.lock
 
 # Graphviz files
 *.png
+*.svg
 *.dot
