@@ -43,11 +43,11 @@ fn program_to_dot<J: Jet>(
     let mut dot = String::new();
     writeln!(dot, "digraph {{\nranksep=3;")?;
 
-    let connected = compute_connected_component(redeem::RefWrapper(program), node_to_scribe);
+    let reachable = reachable_nodes(redeem::RefWrapper(program), node_to_scribe);
     let mut node_to_index = HashMap::new();
 
     for (index, node) in redeem::RefWrapper(program).iter_post_order().enumerate() {
-        if !connected.contains(&node) {
+        if !reachable.contains(&node) {
             continue;
         }
 
@@ -64,9 +64,11 @@ fn program_to_dot<J: Jet>(
     Ok(dot)
 }
 
-/// Compute the connected component of the given program by traversing from the root in pre-order.
-/// Scribe expressions are treated as leaves.
-fn compute_connected_component<'a, J: Jet>(
+/// Compute nodes that are reachable from root without entering scribe expressions
+///
+/// Nodes inside scribe expressions may be shared and thus reachable.
+/// Therefore, the opposite approach of computing reachable nodes from scribe roots does not work.
+fn reachable_nodes<'a, J: Jet>(
     program: redeem::RefWrapper<'a, J>,
     node_to_scribe: &HashMap<redeem::RefWrapper<J>, Value>,
 ) -> HashSet<redeem::RefWrapper<'a, J>> {
@@ -117,10 +119,10 @@ fn fmt_node<J: Jet, W: FmtWrite>(
     write!(w, "{} [label=\"{}\\n{}\"];", index, node.0.inner, node.0.ty)?;
 
     if let Some(left) = node.get_left() {
-        let i_abs = node_to_index.get(&left).unwrap();
+        let i_abs = node_to_index.get(&left).expect("post order");
 
         if let Some(right) = node.get_right() {
-            let j_abs = node_to_index.get(&right).unwrap();
+            let j_abs = node_to_index.get(&right).expect("post order");
             writeln!(w, "  {} -> {} [color=red];", index, i_abs)?;
             writeln!(w, "  {} -> {} [color=blue];", index, j_abs)?;
         } else {
