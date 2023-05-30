@@ -93,7 +93,7 @@ fn compute_connected_component<'a, J: Jet>(
 
 fn fmt_scribe<W: FmtWrite>(w: &mut W, value: &Value, index: usize) -> fmt::Result {
     let (bytes, bit_len) = value.to_bytes_len();
-    write!(w, "{} [label=\"scribe\\n", index)?;
+    write!(w, "{} [label=\"", index)?;
 
     if bit_len % 8 == 0 {
         for byte in &bytes {
