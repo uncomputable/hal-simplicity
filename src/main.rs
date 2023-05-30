@@ -2,7 +2,7 @@ mod compress;
 mod decode;
 mod encode;
 mod error;
-mod graphviz;
+mod graph;
 mod policy;
 
 use crate::error::Error;
@@ -58,7 +58,7 @@ fn main() -> Result<(), Error> {
         Command::Graph { base64 } => {
             let program = decode::decode_program_dummy_witness::<Elements>(&base64);
             let node_to_scribe = compress::compress_scribe(&program);
-            graphviz::visualize(&program, &node_to_scribe)?;
+            graph::visualize(&program, &node_to_scribe)?;
         }
         Command::Script { hex } => {
             let policy = policy::parse_miniscript(&hex);
