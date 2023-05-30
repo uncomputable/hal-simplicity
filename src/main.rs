@@ -58,8 +58,7 @@ fn main() -> Result<(), Error> {
         Command::Graph { base64 } => {
             let program = decode::decode_program_dummy_witness::<Elements>(&base64);
             let node_to_scribe = compress::compress_scribe(&program);
-            let dot = graphviz::program_to_dot(&program, &node_to_scribe)?;
-            println!("{}", dot);
+            graphviz::visualize(&program, &node_to_scribe)?;
         }
         Command::Script { hex } => {
             let policy = policy::parse_miniscript(&hex);

@@ -1,12 +1,42 @@
 use crate::error::Error;
+use layout::backends::svg::SVGWriter;
+use layout::gv::{DotParser, GraphBuilder};
 use simplicity::core::iter::DagIterable;
 use simplicity::core::{redeem, RedeemNode, Value};
 use simplicity::jet::Jet;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
-use std::fmt::Write;
+use std::fmt::Write as FmtWrite;
+use std::fs::File;
+use std::io::Write as IOWrite;
+use std::path::Path;
 
-pub fn program_to_dot<J: Jet>(
+pub fn visualize<J: Jet>(
+    program: &RedeemNode<J>,
+    node_to_scribe: &HashMap<redeem::RefWrapper<J>, Value>,
+) -> Result<(), Error> {
+    let dot = program_to_dot(program, node_to_scribe)?;
+    dot_to_svg(&dot, "simplicity.svg")
+}
+
+fn dot_to_svg<P: AsRef<Path>>(dot: &str, path: P) -> Result<(), Error> {
+    let mut parser = DotParser::new(dot);
+    let graph = parser.process().expect("invalid dot string");
+
+    let mut gb = GraphBuilder::new();
+    gb.visit_graph(&graph);
+    let mut vg = gb.get();
+
+    let mut writer = SVGWriter::new();
+    vg.do_it(false, false, false, &mut writer);
+    let svg = writer.finalize();
+    let file = File::create(path)?;
+    write!(&file, "{}", svg)?;
+
+    Ok(())
+}
+
+fn program_to_dot<J: Jet>(
     program: &RedeemNode<J>,
     node_to_scribe: &HashMap<redeem::RefWrapper<J>, Value>,
 ) -> Result<String, Error> {
@@ -61,7 +91,7 @@ fn compute_connected_component<'a, J: Jet>(
     visited
 }
 
-fn fmt_scribe<W: Write>(w: &mut W, value: &Value, index: usize) -> fmt::Result {
+fn fmt_scribe<W: FmtWrite>(w: &mut W, value: &Value, index: usize) -> fmt::Result {
     let (bytes, bit_len) = value.to_bytes_len();
     write!(w, "{} [label=\"scribe\\n", index)?;
 
@@ -78,7 +108,7 @@ fn fmt_scribe<W: Write>(w: &mut W, value: &Value, index: usize) -> fmt::Result {
     writeln!(w, "\\n1 → 2^{}\"]", bit_len)
 }
 
-fn fmt_node<J: Jet, W: Write>(
+fn fmt_node<J: Jet, W: FmtWrite>(
     w: &mut W,
     node: redeem::RefWrapper<J>,
     index: usize,

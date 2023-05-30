@@ -11,3 +11,4 @@ simplicity = { git = "https://github.com/ElementsProject/rust-simplicity", branc
 base64 = "0.21"
 clap = { version = "4.3", features = ["derive"] }
 thiserror = "1.0"
+layout-rs = "0.1"
