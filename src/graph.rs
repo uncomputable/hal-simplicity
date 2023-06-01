@@ -95,7 +95,13 @@ fn reachable_nodes<'a, J: Jet>(
 
 fn fmt_scribe<W: FmtWrite>(w: &mut W, value: &Value, index: usize) -> fmt::Result {
     let (bytes, bit_len) = value.to_bytes_len();
+
     write!(w, "{} [label=\"", index)?;
+
+    // scribe(·) = unit
+    if bit_len == 0 {
+        write!(w, "unit")?;
+    }
 
     if bit_len % 8 == 0 {
         for byte in &bytes {
@@ -107,7 +113,11 @@ fn fmt_scribe<W: FmtWrite>(w: &mut W, value: &Value, index: usize) -> fmt::Resul
         }
     }
 
-    writeln!(w, "\\n1 → 2^{}\"]", bit_len)
+    match bit_len {
+        0 => writeln!(w, "\\n1 → 1\"]"),
+        1 => writeln!(w, "\\n1 → 2\"]"),
+        n => writeln!(w, "\\n1 → 2^{}\"]", n),
+    }
 }
 
 fn fmt_node<J: Jet, W: FmtWrite>(
