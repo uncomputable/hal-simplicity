@@ -21,18 +21,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// List nodes of Simplicity program
-    List {
-        /// Base 64 encoding of Simplicity program
-        base64: String,
+    /// Work with Simplicity programs
+    Prog {
+        #[command(subcommand)]
+        command: ProgCommand,
     },
-    /// Visualize Simplicity program as graph
-    ///
-    /// Output is saved to `simplicity.svg`
-    Graph {
-        /// Base 64 encoding of Simplicity program
-        base64: String,
-    },
+    /// Work with Elements transactions
     Tx {
         #[command(subcommand)]
         command: TxCommand,
@@ -48,15 +42,35 @@ enum TxCommand {
     },
 }
 
+#[derive(Subcommand)]
+enum ProgCommand {
+    /// List nodes of program
+    List {
+        /// Base 64 encoding of program
+        base64: String,
+    },
+    /// Visualize program as graph
+    ///
+    /// Output is saved to `simplicity.svg`
+    Graph {
+        /// Base 64 encoding of program
+        base64: String,
+    },
+}
+
 fn main() -> Result<(), Error> {
     let cli = Cli::parse();
 
     match cli.command {
-        Command::List { base64 } => {
+        Command::Prog {
+            command: ProgCommand::List { base64 },
+        } => {
             let program = decode::decode_program::<Elements>(&base64)?;
             println!("{}", program);
         }
-        Command::Graph { base64 } => {
+        Command::Prog {
+            command: ProgCommand::Graph { base64 },
+        } => {
             let program = decode::decode_program::<Elements>(&base64)?;
             let node_to_scribe = compress::compress_scribe(&program);
             graph::visualize(&program, &node_to_scribe)?;
