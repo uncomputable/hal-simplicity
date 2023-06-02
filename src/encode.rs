@@ -6,7 +6,7 @@ use simplicity::{CommitNode, RedeemNode};
 use std::{io, process};
 
 /// Encode a program as base64 string, using the given function over a bit writer.
-fn encode_base64<F>(f: F) -> String
+pub fn encode_base64<F>(f: F) -> String
 where
     F: Fn(&mut BitWriter<&mut Vec<u8>>) -> io::Result<usize>,
 {

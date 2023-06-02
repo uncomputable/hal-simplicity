@@ -4,6 +4,7 @@ mod encode;
 mod error;
 mod graph;
 mod policy;
+mod tx;
 
 use crate::error::Error;
 use clap::{Parser, Subcommand};
