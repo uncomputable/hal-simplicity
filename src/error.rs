@@ -14,6 +14,10 @@ pub enum Error {
     Encode(#[from] elements::encode::Error),
     #[error("{0}")]
     Json(#[from] serde_json::Error),
+    #[error("{0}")]
+    Base64(#[from] base64::DecodeError),
+    #[error("{0}")]
+    Simplicity(#[from] simplicity::Error),
 }
 
 impl fmt::Debug for Error {

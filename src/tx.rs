@@ -168,7 +168,7 @@ impl<'a> ScriptSpendWitness<'a> {
         let cmr_bytes = self.script;
 
         // FIXME: Does this work with trailing padding?
-        let base64 = encode::encode_base64(|w| w.write(program_and_witness_bytes));
+        let base64 = encode::encode_base64(|w| w.write(program_and_witness_bytes)).ok()?;
         let cmr = cmr_bytes.to_hex();
 
         Some(SimplicitySpendInfo {
