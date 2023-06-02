@@ -53,11 +53,11 @@ fn main() -> Result<(), Error> {
 
     match cli.command {
         Command::List { base64 } => {
-            let program = decode::decode_program_dummy_witness::<Elements>(&base64)?;
+            let program = decode::decode_program::<Elements>(&base64)?;
             println!("{}", program);
         }
         Command::Graph { base64 } => {
-            let program = decode::decode_program_dummy_witness::<Elements>(&base64)?;
+            let program = decode::decode_program::<Elements>(&base64)?;
             let node_to_scribe = compress::compress_scribe(&program);
             graph::visualize(&program, &node_to_scribe)?;
         }
