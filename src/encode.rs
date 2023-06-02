@@ -1,8 +1,6 @@
 use base64::engine::general_purpose;
 use base64::Engine;
 use simplicity::bitwriter::BitWriter;
-use simplicity::jet::Jet;
-use simplicity::{CommitNode, RedeemNode};
 use std::{io, process};
 
 /// Encode a program as base64 string, using the given function over a bit writer.
@@ -22,15 +20,4 @@ where
     }
 
     general_purpose::STANDARD.encode(&program_bytes)
-}
-
-/// Encode the given program commitment as base64 string.
-pub fn encode_program_dummy_witness<J: Jet>(program: &CommitNode<J>) -> String {
-    encode_base64(|w| program.encode(w))
-}
-
-/// Encode the given program with witness data as base64 string.
-#[allow(dead_code)]
-pub fn encode_program<J: Jet>(program: &RedeemNode<J>) -> String {
-    encode_base64(|w| program.encode(w))
 }
