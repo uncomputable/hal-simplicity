@@ -7,7 +7,10 @@ mod policy;
 mod tx;
 
 use crate::error::Error;
+use crate::tx::TransactionInfo;
 use clap::{Parser, Subcommand};
+use elements::hashes::hex::FromHex;
+use hal_elements::GetInfo;
 use simplicity::jet::Elements;
 
 #[derive(Parser)]
@@ -31,6 +34,10 @@ enum Command {
         /// Base 64 encoding of Simplicity program
         base64: String,
     },
+    Tx {
+        #[command(subcommand)]
+        command: TxCommand,
+    },
     /// Convert Miniscript into equivalent Simplicity program and export in base64
     Script {
         /// Hex encoding of Miniscript
@@ -48,6 +55,15 @@ enum Command {
     },
 }
 
+#[derive(Subcommand)]
+enum TxCommand {
+    /// Decode a raw transaction to JSON
+    Decode {
+        /// Raw transaction hex
+        hex: String,
+    },
+}
+
 fn main() -> Result<(), Error> {
     let cli = Cli::parse();
 
@@ -61,6 +77,14 @@ fn main() -> Result<(), Error> {
             let node_to_scribe = compress::compress_scribe(&program);
             graph::visualize(&program, &node_to_scribe)?;
         }
+        Command::Tx { command } => match command {
+            TxCommand::Decode { hex } => {
+                let tx_bytes = Vec::<u8>::from_hex(hex.as_str())?;
+                let tx: elements::Transaction = elements::encode::deserialize(&tx_bytes)?;
+                let info: TransactionInfo = tx.get_info(hal_elements::Network::ElementsRegtest);
+                serde_json::to_writer_pretty(std::io::stdout(), &info)?;
+            }
+        },
         Command::Script { hex } => {
             let policy = policy::parse_miniscript(&hex);
             let program = policy::compile(&policy);
