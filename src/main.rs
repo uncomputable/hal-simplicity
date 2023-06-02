@@ -28,7 +28,7 @@ enum Command {
     },
     /// Visualize Simplicity program as graph
     ///
-    /// Compile to PNG via `simple-companion [base64_string] | dot -Tpng -o file.png`
+    /// Output is saved to `simplicity.svg`
     Graph {
         /// Base 64 encoding of Simplicity program
         base64: String,
