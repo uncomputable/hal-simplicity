@@ -1,3 +1,4 @@
+use simplicity::bitcoin_hashes;
 use std::{fmt, io};
 use thiserror::Error;
 
@@ -7,6 +8,12 @@ pub enum Error {
     Fmt(#[from] fmt::Error),
     #[error("{0}")]
     IO(#[from] io::Error),
+    #[error("{0}")]
+    Hex(#[from] bitcoin_hashes::hex::Error),
+    #[error("{0}")]
+    Encode(#[from] elements::encode::Error),
+    #[error("{0}")]
+    Json(#[from] serde_json::Error),
 }
 
 impl fmt::Debug for Error {
