@@ -1,7 +1,7 @@
 use crate::error::Error;
 use base64::engine::general_purpose;
 use base64::Engine;
-use simplicity::bitwriter::BitWriter;
+use simplicity::BitWriter;
 use std::io;
 
 /// Encode a program as base64 string, using the given function over a bit writer.

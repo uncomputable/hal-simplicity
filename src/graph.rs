@@ -1,9 +1,10 @@
 use crate::error::Error;
 use layout::backends::svg::SVGWriter;
 use layout::gv::{DotParser, GraphBuilder};
-use simplicity::core::iter::DagIterable;
-use simplicity::core::{redeem, RedeemNode, Value};
+use simplicity::core::RedeemNode;
+use simplicity::dag::{DagLike, FullSharing, PostOrderIterItem};
 use simplicity::jet::Jet;
+use simplicity::{Imr, Value};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fmt::Write as FmtWrite;
@@ -13,7 +14,7 @@ use std::path::Path;
 
 pub fn visualize<J: Jet>(
     program: &RedeemNode<J>,
-    node_to_scribe: &HashMap<redeem::RefWrapper<J>, Value>,
+    node_to_scribe: &HashMap<Imr, Value>,
 ) -> Result<(), Error> {
     let dot = program_to_dot(program, node_to_scribe)?;
     dot_to_svg(&dot, "simplicity.svg")
@@ -38,26 +39,23 @@ fn dot_to_svg<P: AsRef<Path>>(dot: &str, path: P) -> Result<(), Error> {
 
 fn program_to_dot<J: Jet>(
     program: &RedeemNode<J>,
-    node_to_scribe: &HashMap<redeem::RefWrapper<J>, Value>,
+    node_to_scribe: &HashMap<Imr, Value>,
 ) -> Result<String, Error> {
     let mut dot = String::new();
     writeln!(dot, "digraph {{\nranksep=3;")?;
 
-    let reachable = reachable_nodes(redeem::RefWrapper(program), node_to_scribe);
-    let mut node_to_index = HashMap::new();
+    let reachable = reachable_nodes(program, node_to_scribe);
 
-    for (index, node) in redeem::RefWrapper(program).iter_post_order().enumerate() {
-        if !reachable.contains(&node) {
+    for (index, item) in program.post_order_iter::<FullSharing>().enumerate() {
+        if !reachable.contains(&item.node.imr) {
             continue;
         }
 
-        if let Some(value) = node_to_scribe.get(&node) {
+        if let Some(value) = node_to_scribe.get(&item.node.imr) {
             fmt_scribe(&mut dot, value, index)?;
         } else {
-            fmt_node(&mut dot, node, index, &node_to_index)?;
+            fmt_node(&mut dot, item)?;
         }
-
-        node_to_index.insert(node, index);
     }
 
     writeln!(&mut dot, "}}")?;
@@ -68,23 +66,23 @@ fn program_to_dot<J: Jet>(
 ///
 /// Nodes inside scribe expressions may be shared and thus reachable.
 /// Therefore, the opposite approach of computing reachable nodes from scribe roots does not work.
-fn reachable_nodes<'a, J: Jet>(
-    program: redeem::RefWrapper<'a, J>,
-    node_to_scribe: &HashMap<redeem::RefWrapper<J>, Value>,
-) -> HashSet<redeem::RefWrapper<'a, J>> {
+fn reachable_nodes<J: Jet>(
+    program: &RedeemNode<J>,
+    node_to_scribe: &HashMap<Imr, Value>,
+) -> HashSet<Imr> {
     let mut visited = HashSet::new();
     let mut stack = vec![program];
 
     while let Some(top) = stack.pop() {
-        visited.insert(top);
+        visited.insert(top.imr);
 
         if let Some(left) = top.get_left() {
-            if !node_to_scribe.contains_key(&top) && !visited.contains(&left) {
+            if !node_to_scribe.contains_key(&top.imr) && !visited.contains(&left.imr) {
                 stack.push(left);
             }
         }
         if let Some(right) = top.get_right() {
-            if !node_to_scribe.contains_key(&top) && !visited.contains(&right) {
+            if !node_to_scribe.contains_key(&top.imr) && !visited.contains(&right.imr) {
                 stack.push(right);
             }
         }
@@ -122,21 +120,20 @@ fn fmt_scribe<W: FmtWrite>(w: &mut W, value: &Value, index: usize) -> fmt::Resul
 
 fn fmt_node<J: Jet, W: FmtWrite>(
     w: &mut W,
-    node: redeem::RefWrapper<J>,
-    index: usize,
-    node_to_index: &HashMap<redeem::RefWrapper<J>, usize>,
+    item: PostOrderIterItem<&RedeemNode<J>>,
 ) -> fmt::Result {
-    write!(w, "{} [label=\"{}\\n{}\"];", index, node.0.inner, node.0.ty)?;
+    write!(
+        w,
+        "{} [label=\"{}\\n{}\"];",
+        item.index, item.node.inner, item.node.ty
+    )?;
 
-    if let Some(left) = node.get_left() {
-        let i_abs = node_to_index.get(&left).expect("post order");
-
-        if let Some(right) = node.get_right() {
-            let j_abs = node_to_index.get(&right).expect("post order");
-            writeln!(w, "  {} -> {} [color=red];", index, i_abs)?;
-            writeln!(w, "  {} -> {} [color=blue];", index, j_abs)?;
+    if let Some(i_abs) = item.left_index {
+        if let Some(j_abs) = item.right_index {
+            writeln!(w, "  {} -> {} [color=red];", item.index, i_abs)?;
+            writeln!(w, "  {} -> {} [color=blue];", item.index, j_abs)?;
         } else {
-            writeln!(w, "  {} -> {};", index, i_abs)?;
+            writeln!(w, "  {} -> {};", item.index, i_abs)?;
         }
     }
 

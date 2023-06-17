@@ -1,9 +1,8 @@
 use crate::error::Error;
 use base64::engine::general_purpose;
 use base64::Engine;
-use simplicity::bititer::BitIter;
 use simplicity::jet::Jet;
-use simplicity::RedeemNode;
+use simplicity::{BitIter, RedeemNode};
 use std::rc::Rc;
 
 /// Return a bit iterator over the given base64 string.
