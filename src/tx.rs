@@ -1,9 +1,12 @@
-use crate::encode;
-use elements::confidential;
-use elements::hashes::hex::ToHex;
-use hal_elements::GetInfo;
-use serde::{Deserialize, Serialize};
 use std::io::Write;
+
+use elements::confidential;
+use elements::hex::ToHex;
+use serde::{Deserialize, Serialize};
+use simplicity::elements;
+
+use crate::encode;
+use crate::util::{GetInfo, Network};
 
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 pub struct TransactionInfo {
@@ -14,13 +17,13 @@ pub struct TransactionInfo {
     weight: usize,
     vsize: usize,
     version: u32,
-    locktime: elements::PackedLockTime,
+    locktime: elements::LockTime,
     inputs: Vec<InputInfo>,
     outputs: Vec<OutputInfo>,
 }
 
 impl GetInfo<TransactionInfo> for elements::Transaction {
-    fn get_info(&self, network: hal_elements::Network) -> TransactionInfo {
+    fn get_info(&self, network: Network) -> TransactionInfo {
         TransactionInfo {
             txid: self.txid(),
             wtxid: self.wtxid(),
@@ -44,7 +47,7 @@ pub struct InputInfo {
 }
 
 impl GetInfo<InputInfo> for elements::TxIn {
-    fn get_info(&self, _network: hal_elements::Network) -> InputInfo {
+    fn get_info(&self, _network: Network) -> InputInfo {
         InputInfo {
             prevout: self.previous_output.get_info(_network),
             sequence: self.sequence,
@@ -60,7 +63,7 @@ pub struct OutpointInfo {
 }
 
 impl GetInfo<OutpointInfo> for elements::OutPoint {
-    fn get_info(&self, _network: hal_elements::Network) -> OutpointInfo {
+    fn get_info(&self, _network: Network) -> OutpointInfo {
         OutpointInfo {
             txid: self.txid,
             vout: self.vout,
@@ -76,7 +79,7 @@ pub struct InputWitnessInfo {
 }
 
 impl GetInfo<InputWitnessInfo> for elements::TxInWitness {
-    fn get_info(&self, _network: hal_elements::Network) -> InputWitnessInfo {
+    fn get_info(&self, _network: Network) -> InputWitnessInfo {
         let stack = self.script_witness.iter().map(|x| x.to_hex()).collect();
 
         InputWitnessInfo {
@@ -128,7 +131,7 @@ impl<'a> ScriptSpendWitness<'a> {
 }
 
 impl<'a> GetInfo<ScriptSpendInfo> for ScriptSpendWitness<'a> {
-    fn get_info(&self, _network: hal_elements::Network) -> ScriptSpendInfo {
+    fn get_info(&self, _network: Network) -> ScriptSpendInfo {
         let merkle_path: Vec<_> = self
             .control_block
             .merkle_branch
@@ -187,7 +190,7 @@ pub struct OutputInfo {
 }
 
 impl GetInfo<OutputInfo> for elements::TxOut {
-    fn get_info(&self, network: hal_elements::Network) -> OutputInfo {
+    fn get_info(&self, network: Network) -> OutputInfo {
         let value = if let confidential::Value::Explicit(n) = self.value {
             Some(n)
         } else {
@@ -219,7 +222,7 @@ pub struct OutputScriptInfo {
 }
 
 impl GetInfo<OutputScriptInfo> for elements::Script {
-    fn get_info(&self, network: hal_elements::Network) -> OutputScriptInfo {
+    fn get_info(&self, network: Network) -> OutputScriptInfo {
         let type_ = if self.is_p2pk() {
             "p2pk"
         } else if self.is_p2pkh() {

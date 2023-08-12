@@ -1,5 +1,6 @@
-use simplicity::bitcoin_hashes;
 use std::{fmt, io};
+
+use simplicity::elements;
 use thiserror::Error;
 
 #[derive(Error)]
@@ -8,8 +9,8 @@ pub enum Error {
     Fmt(#[from] fmt::Error),
     #[error("{0}")]
     IO(#[from] io::Error),
-    #[error("{0}")]
-    Hex(#[from] bitcoin_hashes::hex::Error),
+    // #[error("{0}")]
+    // Hex(#[from] elements::hex::Error),
     #[error("{0}")]
     Encode(#[from] elements::encode::Error),
     #[error("{0}")]

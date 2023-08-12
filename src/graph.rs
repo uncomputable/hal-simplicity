@@ -1,10 +1,3 @@
-use crate::error::Error;
-use layout::backends::svg::SVGWriter;
-use layout::gv::{DotParser, GraphBuilder};
-use simplicity::core::RedeemNode;
-use simplicity::dag::{DagLike, FullSharing, PostOrderIterItem};
-use simplicity::jet::Jet;
-use simplicity::{Imr, Value};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fmt::Write as FmtWrite;
@@ -12,11 +5,18 @@ use std::fs::File;
 use std::io::Write as IOWrite;
 use std::path::Path;
 
-pub fn visualize<J: Jet>(
-    program: &RedeemNode<J>,
-    node_to_scribe: &HashMap<Imr, Value>,
-) -> Result<(), Error> {
-    let dot = program_to_dot(program, node_to_scribe)?;
+use layout::backends::svg::SVGWriter;
+use layout::gv::{DotParser, GraphBuilder};
+use simplicity::dag::{DagLike, MaxSharing, PostOrderIterItem};
+use simplicity::jet::Jet;
+use simplicity::Value;
+use simplicity::{Imr, RedeemNode};
+
+use crate::compress;
+use crate::error::Error;
+
+pub fn visualize<J: Jet>(program: &RedeemNode<J>) -> Result<(), Error> {
+    let dot = program_to_dot(program)?;
     dot_to_svg(&dot, "simplicity.svg")
 }
 
@@ -37,22 +37,21 @@ fn dot_to_svg<P: AsRef<Path>>(dot: &str, path: P) -> Result<(), Error> {
     Ok(())
 }
 
-fn program_to_dot<J: Jet>(
-    program: &RedeemNode<J>,
-    node_to_scribe: &HashMap<Imr, Value>,
-) -> Result<String, Error> {
+fn program_to_dot<J: Jet>(program: &RedeemNode<J>) -> Result<String, Error> {
     let mut dot = String::new();
     writeln!(dot, "digraph {{\nranksep=3;")?;
 
-    let reachable = reachable_nodes(program, node_to_scribe);
+    let scribe_values = compress::scribe_values(program);
+    let reachable = scribe_reachable(program, &scribe_values);
 
-    for (index, item) in program.post_order_iter::<FullSharing>().enumerate() {
-        if !reachable.contains(&item.node.imr) {
+    for item in program.post_order_iter::<MaxSharing<_>>() {
+        let imr = item.node.data().imr();
+        if !reachable.contains(&imr) {
             continue;
         }
 
-        if let Some(value) = node_to_scribe.get(&item.node.imr) {
-            fmt_scribe(&mut dot, value, index)?;
+        if let Some(value) = scribe_values.get(&imr) {
+            fmt_scribe(&mut dot, value, item.index)?;
         } else {
             fmt_node(&mut dot, item)?;
         }
@@ -66,23 +65,23 @@ fn program_to_dot<J: Jet>(
 ///
 /// Nodes inside scribe expressions may be shared and thus reachable.
 /// Therefore, the opposite approach of computing reachable nodes from scribe roots does not work.
-fn reachable_nodes<J: Jet>(
+pub fn scribe_reachable<J: Jet>(
     program: &RedeemNode<J>,
-    node_to_scribe: &HashMap<Imr, Value>,
+    scribe_values: &HashMap<Imr, Value>,
 ) -> HashSet<Imr> {
     let mut visited = HashSet::new();
     let mut stack = vec![program];
 
     while let Some(top) = stack.pop() {
-        visited.insert(top.imr);
+        visited.insert(top.imr());
 
-        if let Some(left) = top.get_left() {
-            if !node_to_scribe.contains_key(&top.imr) && !visited.contains(&left.imr) {
+        if let Some(left) = top.left_child() {
+            if !scribe_values.contains_key(&top.imr()) && !visited.contains(&left.imr()) {
                 stack.push(left);
             }
         }
-        if let Some(right) = top.get_right() {
-            if !node_to_scribe.contains_key(&top.imr) && !visited.contains(&right.imr) {
+        if let Some(right) = top.right_child() {
+            if !scribe_values.contains_key(&top.imr()) && !visited.contains(&right.imr()) {
                 stack.push(right);
             }
         }
@@ -125,7 +124,9 @@ fn fmt_node<J: Jet, W: FmtWrite>(
     write!(
         w,
         "{} [label=\"{}\\n{}\"];",
-        item.index, item.node.inner, item.node.ty
+        item.index,
+        item.node.inner(),
+        item.node.arrow()
     )?;
 
     if let Some(i_abs) = item.left_index {

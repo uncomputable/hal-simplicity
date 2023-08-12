@@ -1,40 +1,36 @@
-use simplicity::core::redeem::RedeemNodeInner;
-use simplicity::core::RedeemNode;
-use simplicity::dag::{DagLike, FullSharing};
-use simplicity::jet::Jet;
-use simplicity::{Imr, Value};
 use std::collections::HashMap;
+
+use simplicity::dag::{DagLike, MaxSharing};
+use simplicity::jet::Jet;
+use simplicity::node::Inner;
+use simplicity::RedeemNode;
+use simplicity::{Imr, Value};
 
 /// Compute a mapping of nodes to the scribe expression that they represent.
 /// This effectively reverses the function that turns scribe expressions into DAGs.
-pub fn compress_scribe<J: Jet>(program: &RedeemNode<J>) -> HashMap<Imr, Value> {
-    let mut node_to_scribe = HashMap::new();
+pub fn scribe_values<J: Jet>(program: &RedeemNode<J>) -> HashMap<Imr, Value> {
+    let mut scribe_values = HashMap::new();
 
-    for data in program.post_order_iter::<FullSharing>() {
-        match &data.node.inner {
-            RedeemNodeInner::Unit => {
-                node_to_scribe.insert(data.node.imr, Value::Unit);
+    for item in program.post_order_iter::<MaxSharing<_>>() {
+        match item.node.inner() {
+            Inner::Unit => {
+                scribe_values.insert(item.node.imr(), Value::Unit);
             }
-            RedeemNodeInner::InjL(_) => {
-                let left = data.node.get_left().unwrap();
-                if let Some(value) = node_to_scribe.get(&left.imr) {
-                    node_to_scribe.insert(data.node.imr, Value::sum_l(value.clone()));
+            Inner::InjL(left) => {
+                if let Some(value) = scribe_values.get(&left.imr()) {
+                    scribe_values.insert(item.node.imr(), Value::sum_l(value.clone()));
                 }
             }
-            RedeemNodeInner::InjR(_) => {
-                let left = data.node.get_left().unwrap();
-                if let Some(value) = node_to_scribe.get(&left.imr) {
-                    node_to_scribe.insert(data.node.imr, Value::sum_r(value.clone()));
+            Inner::InjR(left) => {
+                if let Some(value) = scribe_values.get(&left.imr()) {
+                    scribe_values.insert(item.node.imr(), Value::sum_r(value.clone()));
                 }
             }
-            RedeemNodeInner::Pair(_, _) => {
-                let left = data.node.get_left().unwrap();
-                let right = data.node.get_right().unwrap();
-
-                if let Some(value_left) = node_to_scribe.get(&left.imr) {
-                    if let Some(value_right) = node_to_scribe.get(&right.imr) {
-                        node_to_scribe.insert(
-                            data.node.imr,
+            Inner::Pair(left, right) => {
+                if let Some(value_left) = scribe_values.get(&left.imr()) {
+                    if let Some(value_right) = scribe_values.get(&right.imr()) {
+                        scribe_values.insert(
+                            item.node.imr(),
                             Value::prod(value_left.clone(), value_right.clone()),
                         );
                     }
@@ -44,5 +40,5 @@ pub fn compress_scribe<J: Jet>(program: &RedeemNode<J>) -> HashMap<Imr, Value> {
         }
     }
 
-    node_to_scribe
+    scribe_values
 }

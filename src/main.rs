@@ -4,13 +4,16 @@ mod encode;
 mod error;
 mod graph;
 mod tx;
+mod util;
+
+use clap::{Parser, Subcommand};
+use elements::hex::FromHex;
+use simplicity::elements;
+use simplicity::jet::Elements;
 
 use crate::error::Error;
 use crate::tx::TransactionInfo;
-use clap::{Parser, Subcommand};
-use elements::hashes::hex::FromHex;
-use hal_elements::GetInfo;
-use simplicity::jet::Elements;
+use crate::util::{GetInfo, Network};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -72,14 +75,13 @@ fn main() -> Result<(), Error> {
             command: ProgCommand::Graph { base64 },
         } => {
             let program = decode::decode_program::<Elements>(&base64)?;
-            let node_to_scribe = compress::compress_scribe(&program);
-            graph::visualize(&program, &node_to_scribe)?;
+            graph::visualize(program.as_ref())?;
         }
         Command::Tx { command } => match command {
             TxCommand::Decode { hex } => {
-                let tx_bytes = Vec::<u8>::from_hex(hex.as_str())?;
+                let tx_bytes = Vec::<u8>::from_hex(hex.as_str()).expect("hex error");
                 let tx: elements::Transaction = elements::encode::deserialize(&tx_bytes)?;
-                let info: TransactionInfo = tx.get_info(hal_elements::Network::ElementsRegtest);
+                let info: TransactionInfo = tx.get_info(Network::ElementsRegtest);
                 serde_json::to_writer_pretty(std::io::stdout(), &info)?;
             }
         },
