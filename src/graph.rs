@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Write as FmtWrite;
 use std::fs::File;
@@ -6,6 +7,7 @@ use std::path::Path;
 
 use layout::backends::svg::SVGWriter;
 use layout::gv::{DotParser, GraphBuilder};
+use regex::Regex;
 use simplicity::dag::{DagLike, MaxSharing, PostOrderIterItem};
 use simplicity::jet::Jet;
 use simplicity::{CommitNode, Value};
@@ -16,6 +18,7 @@ use crate::error::Error;
 
 pub fn visualize<J: Jet>(program: &CommitNode<J>) -> Result<(), Error> {
     let dot = program_to_dot(program)?;
+    let dot = types_to_superscript(&dot);
     println!("{}", dot);
     Ok(())
 }
@@ -114,4 +117,24 @@ fn fmt_node<J: Jet, W: FmtWrite>(
     }
 
     Ok(())
+}
+
+#[rustfmt::skip]
+const UNICODE_SUPERSCRIPTS: [char; 10] = [
+    '\u{2070}', '\u{00B9}', '\u{00B2}', '\u{00B3}', '\u{2074}',
+    '\u{2075}', '\u{2076}', '\u{2077}', '\u{2078}', '\u{2079}',
+];
+
+fn exp_to_superscript(exp: &str) -> String {
+    exp.chars()
+        .filter_map(|c| c.to_digit(10).map(|d| UNICODE_SUPERSCRIPTS[d as usize]))
+        .collect()
+}
+
+fn types_to_superscript(str: &str) -> Cow<str> {
+    let re = Regex::new(r"2\^([0-9]+)").unwrap();
+    re.replace_all(str, |caps: &regex::Captures| {
+        let exp = &caps[1];
+        format!("2{}", exp_to_superscript(exp))
+    })
 }
