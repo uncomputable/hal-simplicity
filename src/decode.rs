@@ -3,7 +3,7 @@ use std::sync::Arc;
 use base64::engine::general_purpose;
 use base64::Engine;
 use simplicity::jet::Jet;
-use simplicity::{BitIter, RedeemNode};
+use simplicity::{BitIter, CommitNode};
 
 use crate::error::Error;
 
@@ -14,8 +14,8 @@ fn get_bit_iter(base64_string: &str) -> Result<BitIter<impl Iterator<Item = u8>>
 }
 
 /// Decode a program with witness data from the given base64 string.
-pub fn decode_program<J: Jet>(base64: &str) -> Result<Arc<RedeemNode<J>>, Error> {
+pub fn decode_program<J: Jet>(base64: &str) -> Result<Arc<CommitNode<J>>, Error> {
     let mut bits = get_bit_iter(base64)?;
-    let program = RedeemNode::decode(&mut bits)?;
+    let program = CommitNode::decode(&mut bits)?;
     Ok(program)
 }
