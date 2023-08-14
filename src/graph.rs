@@ -72,8 +72,15 @@ fn fmt_scribe<W: FmtWrite>(w: &mut W, value: &Value, index: usize) -> fmt::Resul
             }
         }
         _ => {
-            for byte in &bytes {
-                write!(w, "{:08b}", byte)?;
+            let mut bits_printed = 0;
+            'outer: for byte in &bytes {
+                for i in (0..8).rev() {
+                    if bits_printed >= bit_len {
+                        break 'outer;
+                    }
+                    write!(w, "{}", (byte >> i) & 1)?;
+                    bits_printed += 1;
+                }
             }
         }
     }
