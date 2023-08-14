@@ -16,9 +16,11 @@ use crate::error::Error;
 
 pub fn visualize<J: Jet>(program: &CommitNode<J>) -> Result<(), Error> {
     let dot = program_to_dot(program)?;
-    dot_to_svg(&dot, "simplicity.svg")
+    println!("{}", dot);
+    Ok(())
 }
 
+#[allow(dead_code)]
 fn dot_to_svg<P: AsRef<Path>>(dot: &str, path: P) -> Result<(), Error> {
     let mut parser = DotParser::new(dot);
     let graph = parser.process().expect("invalid dot string");
