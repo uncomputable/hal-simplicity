@@ -41,7 +41,7 @@ fn program_to_dot<J: Jet>(program: &RedeemNode<J>) -> Result<String, Error> {
     let mut dot = String::new();
     writeln!(dot, "digraph {{\nranksep=3;")?;
 
-    let scribe_values = compress::scribe_values(program);
+    let (scribe_values, _) = compress::scribe_values_hidden(program);
     let reachable = scribe_reachable(program, &scribe_values);
 
     for item in program.post_order_iter::<MaxSharing<_>>() {
