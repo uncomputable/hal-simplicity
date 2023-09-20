@@ -7,7 +7,7 @@ authors = ["Christian Lewe"]
 license = "CC0-1.0"
 
 [dependencies]
-simplicity = { git = "https://github.com/ElementsProject/rust-simplicity", rev = "a10e301", features = ["serde"] }
+simplicity = { git = "https://github.com/BlockstreamResearch/rust-simplicity", rev = "d5c0d65320816bfdf36411feed4bdff0708b5b12", features = ["serde"] }
 base64 = "0.21"
 clap = { version = "4.3", features = ["derive"] }
 thiserror = "1.0"

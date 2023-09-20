@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 use simplicity::dag::{DagLike, MaxSharing, SharingTracker};
 use simplicity::node::{Inner, Marker, Node};
@@ -7,7 +8,7 @@ use simplicity::Value;
 /// Compute a mapping of scribe expressions to the value that they encode.
 ///
 /// This effectively reverses the function scribe that turns values into expressions.
-fn scribe_values<N: Marker>(program: &Node<N>) -> HashMap<N::SharingId, Value> {
+fn scribe_values<N: Marker>(program: &Node<N>) -> HashMap<N::SharingId, Arc<Value>> {
     let mut scribe_values = HashMap::new();
 
     for item in program.post_order_iter::<MaxSharing<_>>() {
@@ -18,7 +19,7 @@ fn scribe_values<N: Marker>(program: &Node<N>) -> HashMap<N::SharingId, Value> {
 
         match item.node.inner() {
             Inner::Unit => {
-                scribe_values.insert(id, Value::Unit);
+                scribe_values.insert(id, Value::unit());
             }
             Inner::InjL(left) => {
                 let left_id = left.sharing_id().expect("parent has id");
@@ -43,7 +44,7 @@ fn scribe_values<N: Marker>(program: &Node<N>) -> HashMap<N::SharingId, Value> {
                 }
             }
             Inner::Word(value) => {
-                scribe_values.insert(id, value.as_ref().clone());
+                scribe_values.insert(id, value.clone());
             }
             _ => {}
         }
@@ -58,7 +59,7 @@ fn scribe_values<N: Marker>(program: &Node<N>) -> HashMap<N::SharingId, Value> {
 /// Also return the set of subexpressions that are hidden inside a larger scribe.
 pub fn scribe_values_hidden<N: Marker>(
     program: &Node<N>,
-) -> (HashMap<N::SharingId, Value>, HashSet<N::SharingId>) {
+) -> (HashMap<N::SharingId, Arc<Value>>, HashSet<N::SharingId>) {
     let scribe_values = scribe_values(program);
     let mut top_scribe_values = HashMap::new();
     let mut scribe_hidden: HashSet<_> = scribe_values.keys().cloned().collect();
